@@ -193,6 +193,31 @@
             flex: 1;
         }
 
+        .employee-name-input {
+            width: 100%;
+            height: 36px;
+            padding: 8px 12px;
+            border: 1px solid var(--neutral-300);
+            border-radius: 6px;
+            font-size: 16px;
+            font-family: inherit;
+            font-weight: 600;
+            color: var(--neutral-900);
+            background: var(--neutral-100);
+            transition: all 200ms ease-out;
+        }
+
+        .employee-name-input:focus {
+            outline: none;
+            border: 1px solid var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+            background: var(--neutral-100);
+        }
+
+        .employee-name-input:hover {
+            border: 1px solid var(--neutral-500);
+        }
+
         .delete-btn {
             background: var(--error-100);
             color: var(--error-700);
@@ -232,6 +257,16 @@
             outline: none;
             border: 1px solid var(--primary-500);
             box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        /* Special styling for attendance input */
+        .attendance-input {
+            border-left: 3px solid var(--neutral-500);
+            position: relative;
+        }
+
+        .attendance-input:invalid {
+            border-left-color: var(--error-700);
         }
 
         .result-cell {
@@ -279,7 +314,7 @@
 
         .summary-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: var(--space-md);
         }
 
@@ -300,6 +335,35 @@
             font-size: 18px;
             font-weight: 600;
             color: var(--neutral-900);
+        }
+
+        .attention-names {
+            font-size: 14px;
+            color: var(--neutral-800);
+            max-height: 120px;
+            overflow-y: auto;
+            padding: var(--space-sm) 0;
+        }
+
+        .attention-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--neutral-200);
+            font-size: 14px;
+        }
+
+        .attention-item:last-child {
+            border-bottom: none;
+        }
+
+        .attention-reason {
+            font-size: 12px;
+            color: var(--neutral-600);
+            font-style: italic;
+            white-space: nowrap;
+            margin-left: var(--space-sm);
         }
 
         .calendar-section {
@@ -490,6 +554,24 @@
                 font-size: 14px;
             }
 
+            .attention-names {
+                max-height: 100px;
+                font-size: 13px;
+            }
+
+            .attention-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+                padding: 8px 0;
+            }
+
+            .attention-reason {
+                margin-left: 0;
+                white-space: normal;
+                font-size: 11px;
+            }
+
             .summary-grid {
                 grid-template-columns: 1fr;
             }
@@ -560,7 +642,7 @@
                 <div class="kpi-weights">
                     <div class="weight-item">
                         <span class="weight-label">Attendance</span>
-                        <span>Target: 100% <small>(Weight: 0%)</small></span>
+                        <span>Target: 100% <small>(Weight: 0%) - Needs Attention Below 95%</small></span>
                     </div>
                     <div class="weight-item">
                         <span class="weight-label">Quality</span>
@@ -615,7 +697,7 @@
                     <thead>
                         <tr>
                             <th>Employee Name</th>
-                            <th>Attendance (%)<br><span class="target-info">Target: 100%</span></th>
+                            <th>Attendance (%)<br><span class="target-info">Target: 100% - Needs Attention Below 95%</span></th>
                             <th>Quality (%)<br><span class="target-info">Target: 90%</span></th>
                             <th>Conversion (%)<br><span class="target-info">Target: 92%</span></th>
                             <th>SLA (%)<br><span class="target-info">Target: 90%</span></th>
@@ -648,6 +730,10 @@
                     <div class="summary-card">
                         <div class="summary-label">Needs Attention</div>
                         <div class="summary-value" id="needsAttention">0</div>
+                    </div>
+                    <div class="summary-card" style="grid-column: 1 / -1;">
+                        <div class="summary-label">Employees Needing Attention</div>
+                        <div class="attention-names" id="attentionNames">-</div>
                     </div>
                 </div>
             </div>
@@ -716,9 +802,14 @@
         };
 
         const employees = [
-            'Sample, sample',
-           
-                ];
+            'Diaz, John Erick',
+            'Forteza, Camille Joyce',
+            'Gutierrez, Iris Gio',
+            'Naguit Montoya, Jennylyn',
+            'Ricardo Diorico',
+            'Romel Belga',
+            'Sharlyn Mae Quizana'
+        ];
 
         // Storage keys
         const STORAGE_KEYS = {
@@ -1076,6 +1167,46 @@
             saveToStorage();
         }
 
+        // Update employee name
+        function updateEmployeeName(index) {
+            const input = document.getElementById(`employeeName_${index}`);
+            if (input) {
+                const newName = input.value.trim();
+                if (newName && newName !== employees[index]) {
+                    const oldName = employees[index];
+                    employees[index] = newName;
+                    
+                    // Update delete button title
+                    const deleteBtn = input.parentElement.querySelector('.delete-btn');
+                    if (deleteBtn) {
+                        deleteBtn.setAttribute('title', `Remove ${newName}`);
+                    }
+                    
+                    saveToStorage();
+                    updateSummary();
+                    showNotification(`Employee name updated from "${oldName}" to "${newName}"`, 'success');
+                }
+            }
+        }
+
+        // Highlight attendance when below 95%
+        function highlightAttendance(employeeIndex) {
+            const attendanceInput = document.getElementById(`attendance_${employeeIndex}`);
+            if (attendanceInput) {
+                const value = parseFloat(attendanceInput.value) || 0;
+                if (value > 0 && value < 95) {
+                    attendanceInput.style.backgroundColor = 'var(--error-100)';
+                    attendanceInput.style.borderColor = 'var(--error-700)';
+                    attendanceInput.style.color = 'var(--error-700)';
+                } else {
+                    attendanceInput.style.backgroundColor = '';
+                    attendanceInput.style.borderColor = '';
+                    attendanceInput.style.color = '';
+                }
+            }
+            updateSummary();
+        }
+
         // Generate table rows
         function generateTableRows() {
             const tbody = document.getElementById('employeeTableBody');
@@ -1085,16 +1216,18 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="employee-name">
-                        <div class="employee-info">${employee}</div>
+                        <input type="text" class="employee-name-input" id="employeeName_${index}" value="${employee}" 
+                               onblur="updateEmployeeName(${index})" onkeyup="if(event.key==='Enter'){this.blur();} saveWithDebounce()" 
+                               oninput="saveWithDebounce()" title="Click to edit employee name">
                         <button class="delete-btn" onclick="removeEmployee(${index})" title="Remove ${employee}">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
                     </td>
-                    <td><input type="number" class="kpi-input" id="attendance_${index}" min="0" max="200" step="0.1" placeholder="0" 
-                               onchange="calculateScore(${index})" onblur="saveEmployeeData(${index})" onkeyup="saveWithDebounce()" 
-                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input attendance-input" id="attendance_${index}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${index}); highlightAttendance(${index})" onblur="saveEmployeeData(${index}); highlightAttendance(${index})" onkeyup="saveWithDebounce(); highlightAttendance(${index})" 
+                               oninput="saveWithDebounce(); highlightAttendance(${index})"></td>
                     <td><input type="number" class="kpi-input" id="quality_${index}" min="0" max="200" step="0.1" placeholder="0" 
                                onchange="calculateScore(${index})" onblur="saveEmployeeData(${index})" onkeyup="saveWithDebounce()" 
                                oninput="saveWithDebounce()"></td>
@@ -1120,7 +1253,7 @@
             });
         }
 
-        // Calculate weighted score for an employee
+       // Calculate weighted score for an employee
         function calculateScore(employeeIndex) {
             let totalWeightedScore = 0;
             let totalWeight = 0;
@@ -1182,14 +1315,56 @@
             const topPerformer = scores.reduce((max, current) => 
                 current.score > max.score ? current : max, { score: 0, name: '-' });
 
-            // Count employees needing attention (score < 75)
-            const needsAttention = scores.filter(s => s.score < 75).length;
+            // Find employees needing attention (score < 75 OR attendance < 95%)
+            const employeesNeedingAttention = scores.filter(s => {
+                const hasLowScore = s.score < 75;
+                const attendanceInput = document.getElementById(`attendance_${s.index}`);
+                const attendanceValue = parseFloat(attendanceInput?.value) || 0;
+                const hasLowAttendance = attendanceValue < 95;
+                return hasLowScore || hasLowAttendance;
+            });
 
             // Update summary display
             document.getElementById('totalEmployees').textContent = employees.length;
             document.getElementById('avgPerformance').textContent = `${Math.round(avgScore * 10) / 10}%`;
             document.getElementById('topPerformer').textContent = topPerformer.name;
-            document.getElementById('needsAttention').textContent = needsAttention;
+            document.getElementById('needsAttention').textContent = employeesNeedingAttention.length;
+
+            // Update the employee names needing attention display
+            updateAttentionNamesDisplay(employeesNeedingAttention);
+        }
+
+        // Update the attention names display
+        function updateAttentionNamesDisplay(employeesNeedingAttention) {
+            const attentionNamesElement = document.getElementById('attentionNames');
+            
+            if (employeesNeedingAttention.length === 0) {
+                attentionNamesElement.innerHTML = '<span style="color: var(--neutral-500); font-style: italic;">All employees are performing well</span>';
+                return;
+            }
+
+            let html = '';
+            employeesNeedingAttention.forEach(employee => {
+                const attendanceInput = document.getElementById(`attendance_${employee.index}`);
+                const attendanceValue = parseFloat(attendanceInput?.value) || 0;
+                const hasLowScore = employee.score < 75;
+                const hasLowAttendance = attendanceValue < 95;
+                
+                let reasons = [];
+                if (hasLowScore) {
+                    reasons.push(`Score: ${employee.score}%`);
+                }
+                if (hasLowAttendance) {
+                    reasons.push(`Attendance: ${attendanceValue}%`);
+                }
+                
+                html += `<div class="attention-item">
+                    <strong>${employee.name}</strong>
+                    <span class="attention-reason">(${reasons.join(', ')})</span>
+                </div>`;
+            });
+            
+            attentionNamesElement.innerHTML = html;
         }
 
         // Remove employee
@@ -1360,29 +1535,61 @@
                     employeeConsistency[empIndex] = [];
                 });
 
-                // Calculate kpi averages
+                // Calculate kpi averages with enhanced attendance focus
                 Object.keys(kpiConfig).forEach(kpi => {
                     let totalValues = 0;
                     let count = 0;
+                    let attendanceCount = 0;
+                    let attendanceSum = 0;
 
-                    Object.values(allScores).forEach(scores => {
-                        const data = employeeData[currentPeriodKey] || {};
-                        // This is simplified - in real implementation you'd calculate based on actual KPI data
-                        const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
-                        if (kpiConfig[kpi].weight > 0) {
-                            totalValues += avgScore;
-                            count++;
+                    // Calculate actual KPI averages from employee data
+                    Object.keys(employeeData).forEach(periodKey => {
+                        const periodData = employeeData[periodKey];
+                        if (periodData) {
+                            Object.keys(periodData).forEach(empIndex => {
+                                const empData = periodData[empIndex];
+                                if (empData && empData[kpi] !== undefined) {
+                                    const value = parseFloat(empData[kpi]) || 0;
+                                    if (kpi === 'attendance') {
+                                        attendanceSum += value;
+                                        attendanceCount++;
+                                    } else if (kpiConfig[kpi].weight > 0) {
+                                        totalValues += value;
+                                        count++;
+                                    }
+                                }
+                            });
                         }
                     });
 
-                    kpiAverages[kpi] = count > 0 ? totalValues / count : 0;
+                    if (kpi === 'attendance') {
+                        kpiAverages[kpi] = attendanceCount > 0 ? attendanceSum / attendanceCount : 0;
+                    } else {
+                        kpiAverages[kpi] = count > 0 ? totalValues / count : 0;
+                    }
                 });
 
-                // Find best and worst KPI categories
+                // Find best and worst KPI categories with attendance priority
                 const kpiArray = Object.entries(kpiAverages).sort((a, b) => b[1] - a[1]);
                 if (kpiArray.length > 0) {
+                    // Top performing category
                     topKpiCategory = kpiArray[0][0].charAt(0).toUpperCase() + kpiArray[0][0].slice(1);
-                    improvementArea = kpiArray[kpiArray.length - 1][0].charAt(0).toUpperCase() + kpiArray[kpiArray.length - 1][0].slice(1);
+                    
+                    // Improvement area - prioritize attendance if below 95%
+                    const attendanceAvg = kpiAverages.attendance || 0;
+                    if (attendanceAvg < 95) {
+                        improvementArea = 'Attendance';
+                    } else {
+                        // If attendance is good, show the lowest performing weighted KPI
+                        const weightedKpis = kpiArray.filter(([kpi]) => kpiConfig[kpi].weight > 0);
+                        if (weightedKpis.length > 0) {
+                            improvementArea = weightedKpis[weightedKpis.length - 1][0].charAt(0).toUpperCase() + 
+                                             weightedKpis[weightedKpis.length - 1][0].slice(1);
+                        } else {
+                            improvementArea = kpiArray[kpiArray.length - 1][0].charAt(0).toUpperCase() + 
+                                             kpiArray[kpiArray.length - 1][0].slice(1);
+                        }
+                    }
                 }
             }
 
@@ -1449,16 +1656,18 @@
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td class="employee-name">
-                        <div class="employee-info">${trimmedName}</div>
+                        <input type="text" class="employee-name-input" id="employeeName_${newIndex}" value="${trimmedName}" 
+                               onblur="updateEmployeeName(${newIndex})" onkeyup="if(event.key==='Enter'){this.blur();} saveWithDebounce()" 
+                               oninput="saveWithDebounce()" title="Click to edit employee name">
                         <button class="delete-btn" onclick="removeEmployee(${newIndex})" title="Remove ${trimmedName}">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </button>
                     </td>
-                    <td><input type="number" class="kpi-input" id="attendance_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
-                               onchange="calculateScore(${newIndex})" onblur="saveEmployeeData(${newIndex})" onkeyup="saveWithDebounce()" 
-                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input attendance-input" id="attendance_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${newIndex}); highlightAttendance(${newIndex})" onblur="saveEmployeeData(${newIndex}); highlightAttendance(${newIndex})" onkeyup="saveWithDebounce(); highlightAttendance(${newIndex})" 
+                               oninput="saveWithDebounce(); highlightAttendance(${newIndex})"></td>
                     <td><input type="number" class="kpi-input" id="quality_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
                                onchange="calculateScore(${newIndex})" onblur="saveEmployeeData(${newIndex})" onkeyup="saveWithDebounce()" 
                                oninput="saveWithDebounce()"></td>
@@ -1560,6 +1769,13 @@
             loadPeriodData();
             updateSummary();
             updateStatistics();
+            
+            // Highlight attendance for all employees
+            setTimeout(() => {
+                employees.forEach((_, index) => {
+                    highlightAttendance(index);
+                });
+            }, 100);
             
             // Verify all employees have proper saving setup
             verifyEmployeeSavingSetup();
