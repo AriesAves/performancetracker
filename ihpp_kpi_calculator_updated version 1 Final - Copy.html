@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IHPP KPI Performance Calculator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-100: #E0EFFF;
+            --primary-500: #0066FF;
+            --primary-700: #004ACC;
+            --neutral-50: #F8F9FA;
+            --neutral-100: #FFFFFF;
+            --neutral-300: #E9ECEF;
+            --neutral-500: #6C757D;
+            --neutral-800: #343A40;
+            --neutral-900: #212529;
+            --success-100: #D1FAE5;
+            --success-700: #059669;
+            --warning-100: #FEF3C7;
+            --warning-700: #D97706;
+            --error-100: #FEE2E2;
+            --error-700: #DC2626;
+            --space-xs: 8px;
+            --space-sm: 12px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-xxl: 48px;
+            --space-xxxl: 64px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--neutral-50);
+            color: var(--neutral-900);
+            line-height: 1.5;
+            font-feature-settings: 'tnum';
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: var(--space-xxxl) var(--space-xl);
+        }
+
+        .main-card {
+            background: var(--neutral-100);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            padding: var(--space-xl);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-xl);
+            gap: var(--space-md);
+        }
+
+        .title {
+            font-size: 40px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: var(--space-md);
+        }
+
+        .btn {
+            height: 48px;
+            padding: 0 24px;
+            background: var(--primary-500);
+            color: var(--neutral-100);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 200ms ease-out;
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .btn-secondary {
+            background: var(--neutral-300);
+            color: var(--neutral-800);
+        }
+
+        .btn:hover {
+            background: var(--primary-100);
+            color: var(--primary-500);
+        }
+
+        .btn-secondary:hover {
+            background: var(--neutral-500);
+            color: var(--neutral-100);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            background: var(--primary-700);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: var(--space-xl);
+            color: var(--neutral-800);
+        }
+
+        .kpi-info {
+            background: var(--neutral-50);
+            padding: var(--space-lg);
+            border-radius: 8px;
+            margin-bottom: var(--space-xl);
+            border: 1px solid var(--neutral-300);
+        }
+
+        .kpi-weights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .weight-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--neutral-800);
+        }
+
+        .weight-label {
+            font-weight: 600;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 8px;
+            border: 1px solid var(--neutral-300);
+        }
+
+        .kpi-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+        }
+
+        .kpi-table th,
+        .kpi-table td {
+            padding: var(--space-lg);
+            text-align: left;
+            border-bottom: 1px solid var(--neutral-300);
+        }
+
+        .kpi-table th {
+            background: var(--neutral-50);
+            color: var(--neutral-800);
+            font-weight: 600;
+            font-size: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .kpi-table td {
+            vertical-align: middle;
+        }
+
+        .employee-name {
+            font-weight: 600;
+            color: var(--neutral-900);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .employee-info {
+            flex: 1;
+        }
+
+        .delete-btn {
+            background: var(--error-100);
+            color: var(--error-700);
+            border: none;
+            border-radius: 6px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 200ms ease-out;
+            margin-left: var(--space-sm);
+        }
+
+        .delete-btn:hover {
+            background: var(--error-700);
+            color: white;
+        }
+
+        .delete-btn:active {
+            transform: scale(0.95);
+        }
+
+        .kpi-input {
+            width: 100%;
+            height: 44px;
+            padding: 12px;
+            border: 1px solid var(--neutral-300);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: inherit;
+            transition: all 200ms ease-out;
+        }
+
+        .kpi-input:focus {
+            outline: none;
+            border: 1px solid var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        .result-cell {
+            font-weight: 600;
+            text-align: center;
+            border-radius: 6px;
+            padding: 12px;
+        }
+
+        .result-success {
+            background: var(--success-100);
+            color: var(--success-700);
+        }
+
+        .result-warning {
+            background: var(--warning-100);
+            color: var(--warning-700);
+        }
+
+        .result-error {
+            background: var(--error-100);
+            color: var(--error-700);
+        }
+
+        .target-info {
+            font-size: 12px;
+            color: var(--neutral-500);
+            font-weight: 400;
+        }
+
+        .summary-section {
+            margin-top: var(--space-xl);
+            padding: var(--space-lg);
+            background: var(--neutral-50);
+            border-radius: 8px;
+            border: 1px solid var(--neutral-300);
+        }
+
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: var(--space-md);
+            color: var(--neutral-800);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .summary-card {
+            background: var(--neutral-100);
+            padding: var(--space-md);
+            border-radius: 6px;
+            border: 1px solid var(--neutral-300);
+        }
+
+        .summary-label {
+            font-size: 14px;
+            color: var(--neutral-500);
+            margin-bottom: 4px;
+        }
+
+        .summary-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--neutral-900);
+        }
+
+        .calendar-section {
+            background: var(--neutral-50);
+            padding: var(--space-lg);
+            border-radius: 8px;
+            margin-bottom: var(--space-xl);
+            border: 1px solid var(--neutral-300);
+        }
+
+        .calendar-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .period-selector {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .period-tabs {
+            display: flex;
+            background: var(--neutral-100);
+            border-radius: 8px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .period-tab {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 200ms ease-out;
+            color: var(--neutral-600);
+        }
+
+        .period-tab.active {
+            background: var(--primary-500);
+            color: var(--neutral-100);
+        }
+
+        .period-tab:hover:not(.active) {
+            background: var(--neutral-300);
+            color: var(--neutral-800);
+        }
+
+        .date-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        .date-input {
+            padding: 8px 12px;
+            border: 1px solid var(--neutral-300);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            min-width: 120px;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border: 1px solid var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        .nav-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--neutral-300);
+            background: var(--neutral-100);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 200ms ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--neutral-300);
+        }
+
+        .current-period {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--neutral-800);
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .statistics-section {
+            margin-top: var(--space-xl);
+            padding: var(--space-lg);
+            background: var(--neutral-50);
+            border-radius: 8px;
+            border: 1px solid var(--neutral-300);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-lg);
+            margin-top: var(--space-md);
+        }
+
+        .stats-card {
+            background: var(--neutral-100);
+            padding: var(--space-lg);
+            border-radius: 8px;
+            border: 1px solid var(--neutral-300);
+        }
+
+        .stats-card h4 {
+            margin-bottom: var(--space-md);
+            color: var(--neutral-800);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-sm) 0;
+            border-bottom: 1px solid var(--neutral-300);
+        }
+
+        .stats-item:last-child {
+            border-bottom: none;
+        }
+
+        .stats-label {
+            font-size: 14px;
+            color: var(--neutral-600);
+        }
+
+        .stats-value {
+            font-weight: 600;
+            color: var(--neutral-900);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: var(--space-xl) var(--space-md);
+            }
+
+            .title {
+                font-size: 32px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: var(--space-md);
+                align-items: stretch;
+            }
+
+            .header-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .kpi-table {
+                font-size: 14px;
+            }
+
+            .kpi-table th,
+            .kpi-table td {
+                padding: var(--space-md);
+            }
+
+            .kpi-input {
+                font-size: 14px;
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .kpi-table th:last-child,
+            .kpi-table td:last-child {
+                position: sticky;
+                right: 0;
+                background: var(--neutral-50);
+                border-left: 1px solid var(--neutral-300);
+            }
+
+            .kpi-table th:last-child {
+                background: var(--neutral-50);
+            }
+
+            .calendar-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: var(--space-md);
+            }
+
+            .period-selector {
+                justify-content: center;
+            }
+
+            .date-controls {
+                justify-content: center;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-card">
+            <div class="header">
+                <h1 class="title">IHPP KPI Performance Calculator</h1>
+                <div class="header-buttons">
+                    <button class="btn btn-secondary" onclick="addEmployee()" title="Add a new employee to the list">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Add Employee
+                    </button>
+                    <button class="btn" onclick="exportResults()" title="Export all data to CSV">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m18-2l-7-7-7 7m14-7V3a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        Export Results
+                    </button>
+                </div>
+            </div>
+
+            <div class="kpi-info">
+                <h3 style="margin-bottom: 16px; color: var(--neutral-800);">KPI Targets & Weightings</h3>
+                <div class="kpi-weights">
+                    <div class="weight-item">
+                        <span class="weight-label">Attendance</span>
+                        <span>Target: 100% <small>(Weight: 0%)</small></span>
+                    </div>
+                    <div class="weight-item">
+                        <span class="weight-label">Quality</span>
+                        <span>Target: 90% <small>(Weight: 20%)</small></span>
+                    </div>
+                    <div class="weight-item">
+                        <span class="weight-label">Conversion</span>
+                        <span>Target: 92% <small>(Weight: 35%)</small></span>
+                    </div>
+                    <div class="weight-item">
+                        <span class="weight-label">SLA</span>
+                        <span>Target: 90% <small>(Weight: 25%)</small></span>
+                    </div>
+                    <div class="weight-item">
+                        <span class="weight-label">Productivity</span>
+                        <span>Target: 100% <small>(Weight: 20%)</small></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="calendar-section">
+                <h3 style="margin-bottom: 16px; color: var(--neutral-800);">Time Period Selection</h3>
+                <div class="calendar-controls">
+                    <div class="period-selector">
+                        <div class="period-tabs">
+                            <button class="period-tab active" onclick="setPeriodType('monthly')" id="tab-monthly">Monthly</button>
+                            <button class="period-tab" onclick="setPeriodType('yearly')" id="tab-yearly">Yearly</button>
+                        </div>
+                    </div>
+                    <div class="date-controls">
+                        <button class="nav-btn" onclick="previousPeriod()" title="Previous period">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <div class="current-period" id="currentPeriod">November 2025</div>
+                        <button class="nav-btn" onclick="nextPeriod()" title="Next period">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <input type="month" class="date-input" id="monthPicker" onchange="onMonthChange()">
+                        <input type="number" class="date-input" id="yearPicker" min="2020" max="2030" onchange="onYearChange()">
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="section-title">Employee Performance Data</h2>
+
+            <div class="table-container">
+                <table class="kpi-table">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Attendance (%)<br><span class="target-info">Target: 100%</span></th>
+                            <th>Quality (%)<br><span class="target-info">Target: 90%</span></th>
+                            <th>Conversion (%)<br><span class="target-info">Target: 92%</span></th>
+                            <th>SLA (%)<br><span class="target-info">Target: 90%</span></th>
+                            <th>Productivity (%)<br><span class="target-info">Target: 100%</span></th>
+                            <th>Weighted Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employeeTableBody">
+                        <!-- Employee rows will be generated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="summary-section">
+                <h3 class="summary-title">Performance Summary</h3>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">Total Employees</div>
+                        <div class="summary-value" id="totalEmployees">7</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Average Performance</div>
+                        <div class="summary-value" id="avgPerformance">0%</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Top Performer</div>
+                        <div class="summary-value" id="topPerformer">-</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-label">Needs Attention</div>
+                        <div class="summary-value" id="needsAttention">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="statistics-section">
+                <h3 class="summary-title">Time Period Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <h4>Monthly Performance</h4>
+                        <div class="stats-item">
+                            <span class="stats-label">Best Performing Month</span>
+                            <span class="stats-value" id="bestMonth">-</span>
+                        </div>
+                        <div class="stats-item">
+                            <span class="stats-label">Average Monthly Score</span>
+                            <span class="stats-value" id="avgMonthlyScore">-</span>
+                        </div>
+                        <div class="stats-item">
+                            <span class="stats-label">Months Tracked</span>
+                            <span class="stats-value" id="monthsTracked">0</span>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>Yearly Performance</h4>
+                        <div class="stats-item">
+                            <span class="stats-label">Current Year Score</span>
+                            <span class="stats-value" id="currentYearScore">-</span>
+                        </div>
+                        <div class="stats-item">
+                            <span class="stats-label">Year-over-Year Growth</span>
+                            <span class="stats-value" id="yoyGrowth">-</span>
+                        </div>
+                        <div class="stats-item">
+                            <span class="stats-label">Years Tracked</span>
+                            <span class="stats-value" id="yearsTracked">0</span>
+                        </div>
+                    </div>
+                    <div class="stats-card">
+                        <h4>Key Insights</h4>
+                        <div class="stats-item">
+                            <span class="stats-label">Most Consistent Performer</span>
+                            <span class="stats-value" id="mostConsistent">-</span>
+                        </div>
+                        <div class="stats-item">
+                            <span class="stats-label">Top KPI Category</span>
+                            <span class="stats-value" id="topKpiCategory">-</span>
+                        </div>
+                        <div class="stats-item">
+                            <span class="stats-label">Improvement Needed</span>
+                            <span class="stats-value" id="improvementArea">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // KPI Configuration
+        const kpiConfig = {
+            attendance: { target: 100, weight: 0 },
+            quality: { target: 90, weight: 20 },
+            conversion: { target: 92, weight: 35 },
+            sla: { target: 90, weight: 25 },
+            productivity: { target: 100, weight: 20 }
+        };
+
+        const employees = [
+            'Diaz, John Erick',
+            'Forteza, Camille Joyce',
+            'Gutierrez, Iris Gio',
+            'Naguit Montoya, Jennylyn',
+            'Ricardo Diorico',
+            'Romel Belga',
+            'Sharlyn Mae Quizana'
+        ];
+
+        // Storage keys
+        const STORAGE_KEYS = {
+            EMPLOYEE_DATA: 'ihpp_kpi_employee_data',
+            EMPLOYEES_LIST: 'ihpp_kpi_employees_list',
+            CURRENT_PERIOD_TYPE: 'ihpp_kpi_current_period_type',
+            CURRENT_DATE: 'ihpp_kpi_current_date'
+        };
+
+        // Time Period Management
+        let currentPeriodType = 'monthly'; // 'monthly' or 'yearly'
+        let currentDate = new Date(); // Current date object
+        let employeeData = {}; // Store data for all time periods
+        let currentPeriodKey = ''; // Current period identifier
+
+        // Save data to localStorage
+        function saveToStorage() {
+            try {
+                console.log('Saving to localStorage...');
+                localStorage.setItem(STORAGE_KEYS.EMPLOYEE_DATA, JSON.stringify(employeeData));
+                localStorage.setItem(STORAGE_KEYS.EMPLOYEES_LIST, JSON.stringify(employees));
+                localStorage.setItem(STORAGE_KEYS.CURRENT_PERIOD_TYPE, currentPeriodType);
+                localStorage.setItem(STORAGE_KEYS.CURRENT_DATE, JSON.stringify({
+                    year: currentDate.getFullYear(),
+                    month: currentDate.getMonth(),
+                    date: currentDate.getDate()
+                }));
+                console.log('Data saved to localStorage successfully');
+                console.log('Saved employees:', employees);
+                console.log('Saved data keys:', Object.keys(employeeData));
+            } catch (error) {
+                console.error('Could not save to localStorage:', error);
+            }
+        }
+
+        // Verify all employees have proper saving setup
+        function verifyEmployeeSavingSetup() {
+            console.log('Verifying saving setup for all employees...');
+            employees.forEach((employee, index) => {
+                Object.keys(kpiConfig).forEach(kpi => {
+                    const input = document.getElementById(`${kpi}_${index}`);
+                    if (!input) {
+                        console.error(`Input not found for ${employee} - ${kpi}_${index}`);
+                    } else {
+                        console.log(`Input verified for ${employee} - ${kpi}_${index}:`, input.id);
+                    }
+                });
+            });
+        }
+
+        // Load data from localStorage
+        function loadFromStorage() {
+            try {
+                console.log('Loading from localStorage...');
+                
+                // Load employee data
+                const savedEmployeeData = localStorage.getItem(STORAGE_KEYS.EMPLOYEE_DATA);
+                if (savedEmployeeData) {
+                    employeeData = JSON.parse(savedEmployeeData);
+                    console.log('Loaded employee data:', Object.keys(employeeData));
+                } else {
+                    console.log('No saved employee data found');
+                }
+
+                // Load employees list
+                const savedEmployees = localStorage.getItem(STORAGE_KEYS.EMPLOYEES_LIST);
+                if (savedEmployees) {
+                    const loadedEmployees = JSON.parse(savedEmployees);
+                    if (Array.isArray(loadedEmployees) && loadedEmployees.length > 0) {
+                        employees.length = 0; // Clear existing employees
+                        employees.push(...loadedEmployees); // Add loaded employees
+                        console.log('Loaded employees list:', loadedEmployees);
+                    }
+                } else {
+                    console.log('No saved employees list found');
+                }
+
+                // Load current period type
+                const savedPeriodType = localStorage.getItem(STORAGE_KEYS.CURRENT_PERIOD_TYPE);
+                if (savedPeriodType && (savedPeriodType === 'monthly' || savedPeriodType === 'yearly')) {
+                    currentPeriodType = savedPeriodType;
+                    console.log('Loaded period type:', currentPeriodType);
+                }
+
+                // Load current date
+                const savedDate = localStorage.getItem(STORAGE_KEYS.CURRENT_DATE);
+                if (savedDate) {
+                    const parsedDate = JSON.parse(savedDate);
+                    if (parsedDate.year && parsedDate.month !== undefined) {
+                        currentDate = new Date(parsedDate.year, parsedDate.month, parsedDate.date || 1);
+                        console.log('Loaded current date:', currentDate);
+                    }
+                }
+                
+                console.log('Loading from localStorage completed');
+            } catch (error) {
+                console.error('Could not load from localStorage:', error);
+                // Reset to defaults if loading fails
+                initializePeriodData();
+            }
+        }
+
+        // Initialize period data structure
+        function initializePeriodData() {
+            const now = new Date();
+            const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const yearKey = `${now.getFullYear()}`;
+            currentPeriodKey = monthKey;
+            
+            // Initialize current period data if not exists
+            if (!employeeData[monthKey]) {
+                employeeData[monthKey] = {};
+                
+                // Initialize with empty data for current month
+                employees.forEach((employee, index) => {
+                    employeeData[monthKey][index] = {
+                        attendance: '',
+                        quality: '',
+                        conversion: '',
+                        sla: '',
+                        productivity: ''
+                    };
+                });
+            }
+
+            if (!employeeData[yearKey]) {
+                employeeData[yearKey] = {};
+                
+                // Initialize with empty data for current year
+                employees.forEach((employee, index) => {
+                    employeeData[yearKey][index] = {
+                        attendance: '',
+                        quality: '',
+                        conversion: '',
+                        sla: '',
+                        productivity: ''
+                    };
+                });
+            }
+        }
+
+        // Generate period key based on current date and type
+        function getCurrentPeriodKey() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1;
+            
+            if (currentPeriodType === 'monthly') {
+                return `${year}-${String(month).padStart(2, '0')}`;
+            } else {
+                return `${year}`;
+            }
+        }
+
+        // Update period display
+        function updatePeriodDisplay() {
+            const periodKey = getCurrentPeriodKey();
+            const periodElement = document.getElementById('currentPeriod');
+            
+            if (currentPeriodType === 'monthly') {
+                const [year, month] = periodKey.split('-');
+                const date = new Date(parseInt(year), parseInt(month) - 1);
+                const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                periodElement.textContent = monthName;
+            } else {
+                periodElement.textContent = periodKey;
+            }
+            
+            // Update input fields
+            updatePeriodInputs();
+        }
+
+        // Update period input fields
+        function updatePeriodInputs() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1;
+            
+            if (currentPeriodType === 'monthly') {
+                document.getElementById('monthPicker').value = `${year}-${String(month).padStart(2, '0')}`;
+                document.getElementById('yearPicker').value = year;
+            } else {
+                document.getElementById('yearPicker').value = year;
+            }
+        }
+
+        // Set period type (monthly/yearly)
+        function setPeriodType(type) {
+            currentPeriodType = type;
+            
+            // Update tab appearance
+            document.querySelectorAll('.period-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(`tab-${type}`).classList.add('active');
+            
+            // Update current period key
+            currentPeriodKey = getCurrentPeriodKey();
+            
+            // Update display
+            updatePeriodDisplay();
+            
+            // Load data for new period
+            loadPeriodData();
+            
+            // Update statistics
+            updateStatistics();
+
+            // Save to storage
+            saveToStorage();
+        }
+
+        // Navigate to previous period
+        function previousPeriod() {
+            if (currentPeriodType === 'monthly') {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+            } else {
+                currentDate.setFullYear(currentDate.getFullYear() - 1);
+            }
+            
+            currentPeriodKey = getCurrentPeriodKey();
+            updatePeriodDisplay();
+            loadPeriodData();
+            updateStatistics();
+
+            // Save to storage
+            saveToStorage();
+        }
+
+        // Navigate to next period
+        function nextPeriod() {
+            if (currentPeriodType === 'monthly') {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            } else {
+                currentDate.setFullYear(currentDate.getFullYear() + 1);
+            }
+            
+            currentPeriodKey = getCurrentPeriodKey();
+            updatePeriodDisplay();
+            loadPeriodData();
+            updateStatistics();
+
+            // Save to storage
+            saveToStorage();
+        }
+
+        // Handle month picker change
+        function onMonthChange() {
+            const monthValue = document.getElementById('monthPicker').value;
+            if (monthValue) {
+                const [year, month] = monthValue.split('-');
+                currentDate = new Date(parseInt(year), parseInt(month) - 1);
+                currentPeriodKey = getCurrentPeriodKey();
+                updatePeriodDisplay();
+                loadPeriodData();
+                updateStatistics();
+
+                // Save to storage
+                saveToStorage();
+            }
+        }
+
+        // Handle year picker change
+        function onYearChange() {
+            const yearValue = parseInt(document.getElementById('yearPicker').value);
+            if (yearValue && yearValue >= 2020 && yearValue <= 2030) {
+                if (currentPeriodType === 'monthly') {
+                    currentDate.setFullYear(yearValue);
+                } else {
+                    currentDate = new Date(yearValue, 0, 1);
+                }
+                currentPeriodKey = getCurrentPeriodKey();
+                updatePeriodDisplay();
+                loadPeriodData();
+                updateStatistics();
+
+                // Save to storage
+                saveToStorage();
+            }
+        }
+
+        // Load data for current period
+        function loadPeriodData() {
+            console.log('Loading data for period:', currentPeriodKey);
+            console.log('Total employees:', employees.length);
+            
+            if (!employeeData[currentPeriodKey]) {
+                employeeData[currentPeriodKey] = {};
+                employees.forEach((employee, index) => {
+                    employeeData[currentPeriodKey][index] = {
+                        attendance: '',
+                        quality: '',
+                        conversion: '',
+                        sla: '',
+                        productivity: ''
+                    };
+                });
+            }
+            
+            // Load data into form fields for all employees
+            employees.forEach((employee, index) => {
+                const data = employeeData[currentPeriodKey][index];
+                console.log(`Loading data for ${employee}:`, data);
+                
+                if (data) {
+                    Object.keys(data).forEach(kpi => {
+                        const input = document.getElementById(`${kpi}_${index}`);
+                        if (input) {
+                            input.value = data[kpi];
+                            console.log(`Set ${kpi} for ${employee} to:`, data[kpi]);
+                        } else {
+                            console.warn(`Input not found for ${kpi}_${index}`);
+                        }
+                    });
+                    calculateScore(index);
+                }
+            });
+        }
+
+        // Save data for current period
+        function saveCurrentPeriodData() {
+            console.log('Saving data for all employees:', employees.length);
+            
+            employees.forEach((employee, index) => {
+                const data = {};
+                Object.keys(kpiConfig).forEach(kpi => {
+                    const input = document.getElementById(`${kpi}_${index}`);
+                    data[kpi] = input ? input.value : '';
+                });
+                employeeData[currentPeriodKey][index] = data;
+            });
+
+            // Save to storage
+            saveToStorage();
+        }
+
+        // Enhanced save function with debouncing
+        let saveTimeout = null;
+        function saveWithDebounce() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                saveCurrentPeriodData();
+                console.log('Data saved successfully for all employees');
+            }, 100);
+        }
+
+        // Individual employee save function
+        function saveEmployeeData(employeeIndex) {
+            const employeeName = employees[employeeIndex];
+            const data = {};
+            Object.keys(kpiConfig).forEach(kpi => {
+                const input = document.getElementById(`${kpi}_${employeeIndex}`);
+                data[kpi] = input ? input.value : '';
+            });
+            employeeData[currentPeriodKey][employeeIndex] = data;
+            console.log(`Data saved for ${employeeName}:`, data);
+            
+            // Save to storage
+            saveToStorage();
+        }
+
+        // Generate table rows
+        function generateTableRows() {
+            const tbody = document.getElementById('employeeTableBody');
+            tbody.innerHTML = '';
+
+            employees.forEach((employee, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="employee-name">
+                        <div class="employee-info">${employee}</div>
+                        <button class="delete-btn" onclick="removeEmployee(${index})" title="Remove ${employee}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </td>
+                    <td><input type="number" class="kpi-input" id="attendance_${index}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${index})" onblur="saveEmployeeData(${index})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="quality_${index}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${index})" onblur="saveEmployeeData(${index})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="conversion_${index}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${index})" onblur="saveEmployeeData(${index})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="sla_${index}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${index})" onblur="saveEmployeeData(${index})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="productivity_${index}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${index})" onblur="saveEmployeeData(${index})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><div class="result-cell result-success" id="score_${index}">0%</div></td>
+                    <td>
+                        <button class="delete-btn" onclick="removeEmployee(${index})" title="Remove ${employee}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Calculate weighted score for an employee
+        function calculateScore(employeeIndex) {
+            let totalWeightedScore = 0;
+            let totalWeight = 0;
+
+            // Calculate weighted score
+            for (const [kpi, config] of Object.entries(kpiConfig)) {
+                const input = document.getElementById(`${kpi}_${employeeIndex}`);
+                const value = parseFloat(input.value) || 0;
+                
+                if (config.weight > 0) {
+                    const achievementRate = Math.min(value / config.target, 2); // Cap at 200%
+                    totalWeightedScore += achievementRate * config.weight;
+                    totalWeight += config.weight;
+                }
+            }
+
+            // Calculate final score (as percentage)
+            const finalScore = totalWeight > 0 ? (totalWeightedScore / totalWeight) * 100 : 0;
+            const finalScoreRounded = Math.round(finalScore * 10) / 10;
+
+            // Update score display
+            const scoreCell = document.getElementById(`score_${employeeIndex}`);
+            if (scoreCell) {
+                scoreCell.textContent = `${finalScoreRounded}%`;
+
+                // Apply color coding
+                const avgTarget = 85; // Average target threshold
+                scoreCell.className = 'result-cell';
+                
+                if (finalScore >= avgTarget) {
+                    scoreCell.classList.add('result-success');
+                } else if (finalScore >= avgTarget - 10) {
+                    scoreCell.classList.add('result-warning');
+                } else {
+                    scoreCell.classList.add('result-error');
+                }
+            }
+
+            // Save individual employee data
+            saveEmployeeData(employeeIndex);
+            updateSummary();
+            updateStatistics();
+        }
+
+        // Update summary statistics
+        function updateSummary() {
+            const scores = [];
+            employees.forEach((_, index) => {
+                const scoreText = document.getElementById(`score_${index}`).textContent;
+                const score = parseFloat(scoreText) || 0;
+                scores.push({ index, score, name: employees[index] });
+            });
+
+            // Calculate average
+            const totalScore = scores.reduce((sum, s) => sum + s.score, 0);
+            const avgScore = scores.length > 0 ? totalScore / scores.length : 0;
+            
+            // Find top performer
+            const topPerformer = scores.reduce((max, current) => 
+                current.score > max.score ? current : max, { score: 0, name: '-' });
+
+            // Count employees needing attention (score < 75)
+            const needsAttention = scores.filter(s => s.score < 75).length;
+
+            // Update summary display
+            document.getElementById('totalEmployees').textContent = employees.length;
+            document.getElementById('avgPerformance').textContent = `${Math.round(avgScore * 10) / 10}%`;
+            document.getElementById('topPerformer').textContent = topPerformer.name;
+            document.getElementById('needsAttention').textContent = needsAttention;
+        }
+
+        // Remove employee
+        function removeEmployee(employeeIndex) {
+            const employeeName = employees[employeeIndex];
+            
+            // Check if we have a minimum number of employees (keep at least 1)
+            if (employees.length <= 1) {
+                showNotification('Cannot remove the last employee!', 'error');
+                return;
+            }
+            
+            // Show confirmation dialog
+            const confirmed = confirm(`Are you sure you want to remove "${employeeName}" from the list?`);
+            
+            if (confirmed) {
+                console.log(`Removing employee: ${employeeName}`);
+                
+                // Remove from employees array
+                employees.splice(employeeIndex, 1);
+                
+                // Remove from all period data
+                Object.keys(employeeData).forEach(periodKey => {
+                    delete employeeData[periodKey][employeeIndex];
+                    console.log(`Removed ${employeeName} from period ${periodKey}`);
+                });
+                
+                // Regenerate table to update all indices
+                generateTableRows();
+                
+                // Update summary
+                updateSummary();
+
+                // Save to storage
+                saveToStorage();
+
+                // Verify setup after removal
+                verifyEmployeeSavingSetup();
+
+                // Show success message
+                showNotification(`Employee "${employeeName}" removed successfully!`);
+            }
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const allScores = getAllPeriodScores();
+            updateMonthlyStats(allScores);
+            updateYearlyStats(allScores);
+            updateKeyInsights(allScores);
+        }
+
+        // Get all period scores for analysis
+        function getAllPeriodScores() {
+            const scores = {};
+            
+            // Collect scores for all periods
+            Object.keys(employeeData).forEach(periodKey => {
+                const periodScores = [];
+                const employeeScores = employeeData[periodKey];
+                
+                Object.keys(employeeScores).forEach(employeeIndex => {
+                    const data = employeeScores[employeeIndex];
+                    let totalWeightedScore = 0;
+                    let totalWeight = 0;
+                    
+                    // Calculate score for this employee
+                    for (const [kpi, config] of Object.entries(kpiConfig)) {
+                        if (config.weight > 0) {
+                            const value = parseFloat(data[kpi]) || 0;
+                            const achievementRate = Math.min(value / config.target, 2);
+                            totalWeightedScore += achievementRate * config.weight;
+                            totalWeight += config.weight;
+                        }
+                    }
+                    
+                    const finalScore = totalWeight > 0 ? (totalWeightedScore / totalWeight) * 100 : 0;
+                    periodScores.push(Math.round(finalScore * 10) / 10);
+                });
+                
+                scores[periodKey] = periodScores;
+            });
+            
+            return scores;
+        }
+
+        // Update monthly statistics
+        function updateMonthlyStats(allScores) {
+            const monthlyScores = Object.keys(allScores)
+                .filter(key => key.includes('-')) // Filter for monthly data (YYYY-MM)
+                .map(key => {
+                    const scores = allScores[key];
+                    const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+                    return { period: key, avgScore };
+                });
+
+            if (monthlyScores.length > 0) {
+                // Best performing month
+                const bestMonth = monthlyScores.reduce((max, current) => 
+                    current.avgScore > max.avgScore ? current : max);
+                
+                const [year, month] = bestMonth.period.split('-');
+                const date = new Date(parseInt(year), parseInt(month) - 1);
+                const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                
+                document.getElementById('bestMonth').textContent = monthName;
+                document.getElementById('avgMonthlyScore').textContent = `${Math.round(bestMonth.avgScore * 10) / 10}%`;
+                document.getElementById('monthsTracked').textContent = monthlyScores.length;
+            } else {
+                document.getElementById('bestMonth').textContent = '-';
+                document.getElementById('avgMonthlyScore').textContent = '-';
+                document.getElementById('monthsTracked').textContent = '0';
+            }
+        }
+
+        // Update yearly statistics
+        function updateYearlyStats(allScores) {
+            const yearlyScores = Object.keys(allScores)
+                .filter(key => !key.includes('-')) // Filter for yearly data (YYYY)
+                .map(key => {
+                    const scores = allScores[key];
+                    const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+                    return { period: key, avgScore };
+                });
+
+            if (yearlyScores.length > 0) {
+                // Current year score
+                const currentYear = new Date().getFullYear().toString();
+                const currentYearData = yearlyScores.find(item => item.period === currentYear);
+                const currentYearScore = currentYearData ? currentYearData.avgScore : 0;
+                
+                document.getElementById('currentYearScore').textContent = `${Math.round(currentYearScore * 10) / 10}%`;
+                document.getElementById('yearsTracked').textContent = yearlyScores.length;
+
+                // Year-over-year growth
+                if (yearlyScores.length > 1) {
+                    const sortedYears = yearlyScores.sort((a, b) => parseInt(a.period) - parseInt(b.period));
+                    const latest = sortedYears[sortedYears.length - 1];
+                    const previous = sortedYears[sortedYears.length - 2];
+                    const growth = latest.avgScore - previous.avgScore;
+                    
+                    document.getElementById('yoyGrowth').textContent = 
+                        growth > 0 ? `+${Math.round(growth * 10) / 10}%` : `${Math.round(growth * 10) / 10}%`;
+                } else {
+                    document.getElementById('yoyGrowth').textContent = '-';
+                }
+            } else {
+                document.getElementById('currentYearScore').textContent = '-';
+                document.getElementById('yoyGrowth').textContent = '-';
+                document.getElementById('yearsTracked').textContent = '0';
+            }
+        }
+
+        // Update key insights
+        function updateKeyInsights(allScores) {
+            // Find most consistent performer
+            let mostConsistent = '-';
+            let topKpiCategory = '-';
+            let improvementArea = '-';
+
+            if (Object.keys(allScores).length > 0) {
+                // Calculate employee consistency across all periods
+                const employeeConsistency = {};
+                const kpiAverages = {};
+
+                // Initialize employee consistency tracking
+                employees.forEach((_, empIndex) => {
+                    employeeConsistency[empIndex] = [];
+                });
+
+                // Calculate kpi averages
+                Object.keys(kpiConfig).forEach(kpi => {
+                    let totalValues = 0;
+                    let count = 0;
+
+                    Object.values(allScores).forEach(scores => {
+                        const data = employeeData[currentPeriodKey] || {};
+                        // This is simplified - in real implementation you'd calculate based on actual KPI data
+                        const avgScore = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+                        if (kpiConfig[kpi].weight > 0) {
+                            totalValues += avgScore;
+                            count++;
+                        }
+                    });
+
+                    kpiAverages[kpi] = count > 0 ? totalValues / count : 0;
+                });
+
+                // Find best and worst KPI categories
+                const kpiArray = Object.entries(kpiAverages).sort((a, b) => b[1] - a[1]);
+                if (kpiArray.length > 0) {
+                    topKpiCategory = kpiArray[0][0].charAt(0).toUpperCase() + kpiArray[0][0].slice(1);
+                    improvementArea = kpiArray[kpiArray.length - 1][0].charAt(0).toUpperCase() + kpiArray[kpiArray.length - 1][0].slice(1);
+                }
+            }
+
+            document.getElementById('mostConsistent').textContent = mostConsistent;
+            document.getElementById('topKpiCategory').textContent = topKpiCategory;
+            document.getElementById('improvementArea').textContent = improvementArea;
+        }
+
+        // Export results to CSV
+        function exportResults() {
+            const periodKey = getCurrentPeriodKey();
+            const periodName = currentPeriodType === 'monthly' 
+                ? document.getElementById('currentPeriod').textContent 
+                : periodKey;
+            
+            let csvContent = `Period,${periodName}\n`;
+            csvContent += 'Employee Name,Attendance,Quality,Conversion,SLA,Productivity,Weighted Score\n';
+            
+            employees.forEach((employee, index) => {
+                const attendance = document.getElementById(`attendance_${index}`).value || '0';
+                const quality = document.getElementById(`quality_${index}`).value || '0';
+                const conversion = document.getElementById(`conversion_${index}`).value || '0';
+                const sla = document.getElementById(`sla_${index}`).value || '0';
+                const productivity = document.getElementById(`productivity_${index}`).value || '0';
+                const score = document.getElementById(`score_${index}`).textContent;
+                
+                csvContent += `"${employee}",${attendance},${quality},${conversion},${sla},${productivity},${score}\n`;
+            });
+
+            // Create and download file
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const filename = `kpi_results_${periodKey}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Add new employee
+        function addEmployee() {
+            const employeeName = prompt('Enter employee name:');
+            if (employeeName && employeeName.trim() !== '') {
+                const trimmedName = employeeName.trim();
+                const newIndex = employees.length;
+                employees.push(trimmedName);
+                
+                // Initialize data for all existing periods
+                Object.keys(employeeData).forEach(periodKey => {
+                    employeeData[periodKey][newIndex] = {
+                        attendance: '',
+                        quality: '',
+                        conversion: '',
+                        sla: '',
+                        productivity: ''
+                    };
+                });
+                
+                // Generate new row
+                const tbody = document.getElementById('employeeTableBody');
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="employee-name">
+                        <div class="employee-info">${trimmedName}</div>
+                        <button class="delete-btn" onclick="removeEmployee(${newIndex})" title="Remove ${trimmedName}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </td>
+                    <td><input type="number" class="kpi-input" id="attendance_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${newIndex})" onblur="saveEmployeeData(${newIndex})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="quality_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${newIndex})" onblur="saveEmployeeData(${newIndex})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="conversion_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${newIndex})" onblur="saveEmployeeData(${newIndex})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="sla_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${newIndex})" onblur="saveEmployeeData(${newIndex})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><input type="number" class="kpi-input" id="productivity_${newIndex}" min="0" max="200" step="0.1" placeholder="0" 
+                               onchange="calculateScore(${newIndex})" onblur="saveEmployeeData(${newIndex})" onkeyup="saveWithDebounce()" 
+                               oninput="saveWithDebounce()"></td>
+                    <td><div class="result-cell result-success" id="score_${newIndex}">0%</div></td>
+                    <td>
+                        <button class="delete-btn" onclick="removeEmployee(${newIndex})" title="Remove ${trimmedName}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+                
+                // Update summary
+                updateSummary();
+
+                // Save to storage
+                saveToStorage();
+                
+                // Show success message
+                showNotification(`Employee "${trimmedName}" added successfully!`, 'success');
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'success') {
+            // Create notification element
+            const notification = document.createElement('div');
+            const backgroundColor = type === 'error' ? 'var(--error-700)' : 'var(--success-700)';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${backgroundColor};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 1000;
+                font-family: 'Inter', sans-serif;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            
+            // Add animation styles
+            if (!document.getElementById('notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'notification-styles';
+                style.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Remove notification after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing IHPP KPI Calculator...');
+            
+            // Load data from localStorage first
+            loadFromStorage();
+            
+            // Initialize data structure if needed
+            initializePeriodData();
+            
+            // Set up calendar inputs
+            const now = new Date();
+            document.getElementById('monthPicker').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            document.getElementById('yearPicker').value = now.getFullYear();
+            
+            // Generate table and load current period data
+            generateTableRows();
+            loadPeriodData();
+            updateSummary();
+            updateStatistics();
+            
+            // Verify all employees have proper saving setup
+            verifyEmployeeSavingSetup();
+            
+            // Load sample data for demonstration (only if no data exists)
+            setTimeout(() => {
+                const hasAnyData = Object.keys(employeeData).some(periodKey => {
+                    return Object.keys(employeeData[periodKey]).some(empIndex => {
+                        const empData = employeeData[periodKey][empIndex];
+                        return empData && Object.values(empData).some(value => value !== '');
+                    });
+                });
+                
+                if (!hasAnyData) {
+                    console.log('No existing data found, loading sample data...');
+                    loadSampleData();
+                } else {
+                    console.log('Found existing data, preserving it...');
+                }
+            }, 500);
+        });
+
+        // Add sample data for demonstration
+        function loadSampleData() {
+            const sampleData = [
+                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
+                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
+                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
+                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
+                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
+                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
+                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 }
+            ];
+
+            // Add sample data to current period
+            sampleData.forEach((data, index) => {
+                Object.keys(data).forEach(kpi => {
+                    const input = document.getElementById(`${kpi}_${index}`);
+                    if (input) input.value = data[kpi];
+                });
+                calculateScore(index);
+            });
+
+            // Create sample data for previous months
+            const currentDate = new Date();
+            for (let i = 1; i <= 3; i++) {
+                const monthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+                const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!employeeData[monthKey]) {
+                    employeeData[monthKey] = {};
+                }
+                
+                sampleData.forEach((data, index) => {
+                    // Add some variation to previous months
+                    const variation = (Math.random() - 0.5) * 10;
+                    employeeData[monthKey][index] = {};
+                    Object.keys(data).forEach(kpi => {
+                        employeeData[monthKey][index][kpi] = Math.max(0, Math.min(200, data[kpi] + variation));
+                    });
+                });
+            }
+            
+            // Create sample data for current year (yearly aggregation)
+            const yearKey = currentDate.getFullYear().toString();
+            employeeData[yearKey] = {};
+            sampleData.forEach((data, index) => {
+                // For yearly data, use the average of monthly data
+                employeeData[yearKey][index] = {};
+                Object.keys(data).forEach(kpi => {
+                    const monthlyValues = [];
+                    for (let i = 0; i < 12; i++) {
+                        const monthKey = `${currentDate.getFullYear()}-${String(i + 1).padStart(2, '0')}`;
+                        if (employeeData[monthKey] && employeeData[monthKey][index]) {
+                            monthlyValues.push(parseFloat(employeeData[monthKey][index][kpi]) || data[kpi]);
+                        }
+                    }
+                    const avgValue = monthlyValues.length > 0 
+                        ? monthlyValues.reduce((a, b) => a + b, 0) / monthlyValues.length 
+                        : data[kpi];
+                    employeeData[yearKey][index][kpi] = Math.round(avgValue);
+                });
+            });
+
+            // Update statistics with sample data
+            updateStatistics();
+
+            // Save to storage
+            saveToStorage();
+        }
+    </script>
+</body>
+</html>
