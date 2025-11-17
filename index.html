@@ -646,19 +646,19 @@
                     </div>
                     <div class="weight-item">
                         <span class="weight-label">Quality</span>
-                        <span>Target: 90% <small>(Weight: 20%)</small></span>
+                        <span>Target: 90% <small>(Weight: 20%) - Weight = 0% if ≤ 70%</small></span>
                     </div>
                     <div class="weight-item">
                         <span class="weight-label">Conversion</span>
-                        <span>Target: 92% <small>(Weight: 35%)</small></span>
+                        <span>Target: 92% <small>(Weight: 35%) - Weight = 0% if ≤ 70%</small></span>
                     </div>
                     <div class="weight-item">
                         <span class="weight-label">SLA</span>
-                        <span>Target: 90% <small>(Weight: 25%)</small></span>
+                        <span>Target: 90% <small>(Weight: 25%) - Weight = 0% if ≤ 70%</small></span>
                     </div>
                     <div class="weight-item">
                         <span class="weight-label">Productivity</span>
-                        <span>Target: 100% <small>(Weight: 20%)</small></span>
+                        <span>Target: 100% <small>(Weight: 20%) - Weight = 0% if ≤ 70%</small></span>
                     </div>
                 </div>
             </div>
@@ -698,10 +698,10 @@
                         <tr>
                             <th>Employee Name</th>
                             <th>Attendance (%)<br><span class="target-info">Target: 100% - Needs Attention Below 95%</span></th>
-                            <th>Quality (%)<br><span class="target-info">Target: 90%</span></th>
-                            <th>Conversion (%)<br><span class="target-info">Target: 92%</span></th>
-                            <th>SLA (%)<br><span class="target-info">Target: 90%</span></th>
-                            <th>Productivity (%)<br><span class="target-info">Target: 100%</span></th>
+                            <th>Quality (%)<br><span class="target-info">Target: 90% - Weight = 0% if ≤ 70%</span></th>
+                            <th>Conversion (%)<br><span class="target-info">Target: 92% - Weight = 0% if ≤ 70%</span></th>
+                            <th>SLA (%)<br><span class="target-info">Target: 90% - Weight = 0% if ≤ 70%</span></th>
+                            <th>Productivity (%)<br><span class="target-info">Target: 100% - Weight = 0% if ≤ 70%</span></th>
                             <th>Weighted Score</th>
                             <th>Actions</th>
                         </tr>
@@ -732,7 +732,7 @@
                         <div class="summary-value" id="needsAttention">0</div>
                     </div>
                     <div class="summary-card" style="grid-column: 1 / -1;">
-                        <div class="summary-label">Employees Needing Attention</div>
+                        <div class="summary-label">Employees Needing Attention (Score < 75% OR Attendance < 95% OR QA/Conversion/SLA/Productivity < 70%)</div>
                         <div class="attention-names" id="attentionNames">-</div>
                     </div>
                 </div>
@@ -1263,10 +1263,17 @@
                 const input = document.getElementById(`${kpi}_${employeeIndex}`);
                 const value = parseFloat(input.value) || 0;
                 
-                if (config.weight > 0) {
+                // Apply 70% threshold for QA, SLA, Conversion, and Productivity
+                // If any of these KPIs are 70% or below, their weight becomes 0
+                let effectiveWeight = config.weight;
+                if ((kpi === 'quality' || kpi === 'sla' || kpi === 'conversion' || kpi === 'productivity') && value <= 70) {
+                    effectiveWeight = 0;
+                }
+                
+                if (effectiveWeight > 0) {
                     const achievementRate = Math.min(value / config.target, 2); // Cap at 200%
-                    totalWeightedScore += achievementRate * config.weight;
-                    totalWeight += config.weight;
+                    totalWeightedScore += achievementRate * effectiveWeight;
+                    totalWeight += effectiveWeight;
                 }
             }
 
@@ -1315,13 +1322,31 @@
             const topPerformer = scores.reduce((max, current) => 
                 current.score > max.score ? current : max, { score: 0, name: '-' });
 
-            // Find employees needing attention (score < 75 OR attendance < 95%)
+            // Find employees needing attention (score < 75 OR attendance < 95% OR any KPI below 70%)
             const employeesNeedingAttention = scores.filter(s => {
                 const hasLowScore = s.score < 75;
                 const attendanceInput = document.getElementById(`attendance_${s.index}`);
                 const attendanceValue = parseFloat(attendanceInput?.value) || 0;
                 const hasLowAttendance = attendanceValue < 95;
-                return hasLowScore || hasLowAttendance;
+                
+                // Check if any of the threshold KPIs are below 70%
+                const qualityInput = document.getElementById(`quality_${s.index}`);
+                const qualityValue = parseFloat(qualityInput?.value) || 0;
+                const hasLowQuality = qualityValue < 70 && qualityValue > 0;
+                
+                const conversionInput = document.getElementById(`conversion_${s.index}`);
+                const conversionValue = parseFloat(conversionInput?.value) || 0;
+                const hasLowConversion = conversionValue < 70 && conversionValue > 0;
+                
+                const slaInput = document.getElementById(`sla_${s.index}`);
+                const slaValue = parseFloat(slaInput?.value) || 0;
+                const hasLowSLA = slaValue < 70 && slaValue > 0;
+                
+                const productivityInput = document.getElementById(`productivity_${s.index}`);
+                const productivityValue = parseFloat(productivityInput?.value) || 0;
+                const hasLowProductivity = productivityValue < 70 && productivityValue > 0;
+                
+                return hasLowScore || hasLowAttendance || hasLowQuality || hasLowConversion || hasLowSLA || hasLowProductivity;
             });
 
             // Update summary display
@@ -1350,12 +1375,41 @@
                 const hasLowScore = employee.score < 75;
                 const hasLowAttendance = attendanceValue < 95;
                 
+                // Check threshold KPI violations
+                const qualityInput = document.getElementById(`quality_${employee.index}`);
+                const qualityValue = parseFloat(qualityInput?.value) || 0;
+                const hasLowQuality = qualityValue < 70 && qualityValue > 0;
+                
+                const conversionInput = document.getElementById(`conversion_${employee.index}`);
+                const conversionValue = parseFloat(conversionInput?.value) || 0;
+                const hasLowConversion = conversionValue < 70 && conversionValue > 0;
+                
+                const slaInput = document.getElementById(`sla_${employee.index}`);
+                const slaValue = parseFloat(slaInput?.value) || 0;
+                const hasLowSLA = slaValue < 70 && slaValue > 0;
+                
+                const productivityInput = document.getElementById(`productivity_${employee.index}`);
+                const productivityValue = parseFloat(productivityInput?.value) || 0;
+                const hasLowProductivity = productivityValue < 70 && productivityValue > 0;
+                
                 let reasons = [];
                 if (hasLowScore) {
                     reasons.push(`Score: ${employee.score}%`);
                 }
                 if (hasLowAttendance) {
                     reasons.push(`Attendance: ${attendanceValue}%`);
+                }
+                if (hasLowQuality) {
+                    reasons.push(`Quality: ${qualityValue}%`);
+                }
+                if (hasLowConversion) {
+                    reasons.push(`Conversion: ${conversionValue}%`);
+                }
+                if (hasLowSLA) {
+                    reasons.push(`SLA: ${slaValue}%`);
+                }
+                if (hasLowProductivity) {
+                    reasons.push(`Productivity: ${productivityValue}%`);
                 }
                 
                 html += `<div class="attention-item">
@@ -1433,11 +1487,18 @@
                     
                     // Calculate score for this employee
                     for (const [kpi, config] of Object.entries(kpiConfig)) {
-                        if (config.weight > 0) {
-                            const value = parseFloat(data[kpi]) || 0;
+                        const value = parseFloat(data[kpi]) || 0;
+                        
+                        // Apply 70% threshold for QA, SLA, Conversion, and Productivity
+                        let effectiveWeight = config.weight;
+                        if ((kpi === 'quality' || kpi === 'sla' || kpi === 'conversion' || kpi === 'productivity') && value <= 70) {
+                            effectiveWeight = 0;
+                        }
+                        
+                        if (effectiveWeight > 0) {
                             const achievementRate = Math.min(value / config.target, 2);
-                            totalWeightedScore += achievementRate * config.weight;
-                            totalWeight += config.weight;
+                            totalWeightedScore += achievementRate * effectiveWeight;
+                            totalWeight += effectiveWeight;
                         }
                     }
                     
@@ -1802,12 +1863,7 @@
         function loadSampleData() {
             const sampleData = [
                 { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
-                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
-                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
-                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
-                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
-                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 },
-                { attendance: 0, quality: 0, conversion: 0, sla: 0, productivity: 0 }
+           
             ];
 
             // Add sample data to current period
